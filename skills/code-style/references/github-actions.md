@@ -1,37 +1,10 @@
----
-name: github-workflows-style
-description: Use when writing, editing, or reviewing GitHub Actions workflow files (.github/workflows/*.yml) — field ordering, permissions placement, step-id usage, GITHUB_ENV set-before-export, hyphenated IDs/contexts, unquoted values, and run: hygiene (no context expressions, for loops, arrays, or braces). Even if the user just says "add a workflow" or "fix this GHA file."
----
+# GitHub Actions workflows
 
-# GitHub Actions Workflows Style
+Workflow YAML must match these conventions. Apply to all new and edited `.github/workflows/*.yml` / `*.yaml` files; flag violations when reviewing.
 
-Workflow YAML in this repo must match these conventions. Apply to all new and edited `.github/workflows/*.yml` files; flag violations when reviewing. These rules are enforced by ast-grep rules in `~/.config/ast-grep/rules/github-actions/`.
+Do not apply to other YAML files (docker-compose, Helm, etc.) or third-party reusable workflows you don't own.
 
-## When to Use
-
-- Writing or editing `.github/workflows/*.yml`
-- Reviewing a workflow diff or PR for style compliance
-- When unsure how to order fields or name an ID/context
-
-When NOT to use: do not apply to other YAML files (docker-compose, Helm, etc.) or third-party reusable workflows you don't own.
-
-## Quick Reference
-
-| Rule                | Violation                              | Compliant                              |
-| ------------------- | -------------------------------------- | -------------------------------------- |
-| Top-level permissions | `permissions:` on each job            | one `permissions:` at workflow top level |
-| `id:` only with outputs | `id:` on a step nothing references   | `id:` only when `steps.<id>.outputs` is referenced |
-| Set before export   | `echo "VERSION=1.2.3" >> $GITHUB_ENV`  | assign, then export to `$GITHUB_ENV`    |
-| Job `name:` first   | `runs-on:` before `name:`              | `name:` then `runs-on:`                |
-| Job `name:` present | missing `name:` field                  | every job has a `name:`                |
-| Step field order    | `uses:` before `id:`                   | `name` → `id` → `uses` → `with` → `run` → `env` |
-| Hyphenated IDs      | `id: build_image`, `inputs.tag_name`   | `id: build-image`, `inputs.tag-name`   |
-| Unquoted values     | `runs-on: 'ubuntu-latest'`             | `runs-on: ubuntu-latest`               |
-| No `${{ }}` in run  | `run: echo "${{ inputs.tag }}"`        | bind via `env:` then `echo "$TAG"`     |
-| No `for` loops      | `for item in ...; do`                  | `while read -r item; do`               |
-| No bash arrays      | `arr=(one two three)`                  | newline-delimited + `while read`      |
-| No `${VAR}` braces  | `echo "${HOME}"`                       | `echo "$HOME"`                         |
-| Heredoc output      | `echo "key=value" >> $GITHUB_OUTPUT`   | heredoc `key<<EOF ... EOF`             |
+Contents: permissions, step IDs, set-before-export, job and step field order, hyphenated IDs, unquoted values, `run:` hygiene, `GITHUB_OUTPUT`, artifact names, common mistakes.
 
 ## Top-Level Permissions
 
@@ -74,9 +47,13 @@ Give a step an `id:` only if something later references it (`steps.<id>.outputs.
   run: make build
 
 # good — id earns its place: an output is consumed
-- id: get-image-slug
+- name: Get image slug
+  id: get-image-slug
   run: ... # writes to $GITHUB_OUTPUT
-- run: echo "${{ steps.get-image-slug.outputs.slug }}"
+- name: Print image slug
+  env:
+    SLUG: ${{ steps.get-image-slug.outputs.slug }}
+  run: echo "$SLUG"
 
 # bad — id with no consumer
 - id: build-image
@@ -139,15 +116,17 @@ name → id → uses → with → run → env
 # good
 - name: Checkout
   id: checkout
-  uses: actions/checkout@v4
+  uses: actions/checkout@v7
   with:
     fetch-depth: 0
+
+- name: Build
   run: make build
   env:
     MODE: release
 ```
 
-Omit fields that don't apply, but keep the remaining ones in this exact order.
+`uses:` and `run:` never appear in the same step. Omit fields that don't apply, but keep the remaining ones in this exact order.
 
 ## Hyphenated IDs and Contexts
 
@@ -155,16 +134,27 @@ User-defined identifiers (step IDs, `inputs.*`, `outputs.*`, `vars.*`) use hyphe
 
 ```yaml
 # good
-- id: build-image
-  run: make build
-echo "${{ inputs.tag-name }}"
-echo "${{ outputs.my-output }}"
+on:
+  workflow_call:
+    inputs:
+      tag-name:
+        type: string
+    outputs:
+      image-slug:
+        value: ${{ jobs.build.outputs.image-slug }}
 
 # bad
-- id: build_image
-echo "${{ inputs.tag_name }}"
-echo "${{ outputs.my_output }}"
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        type: string
+    outputs:
+      image_slug:
+        value: ${{ jobs.build.outputs.image_slug }}
 ```
+
+Step IDs follow the same rule: `id: build-image`, not `id: build_image`.
 
 ## Unquoted Scalar Values
 
@@ -285,7 +275,7 @@ Assign first, then a simple echo. Never inline transformations inside the `echo`
 
 ## Step IDs Are Verb-Noun
 
-Step IDs follow `verb-noun` naming like existing steps in the repo (`checkout-code`, `get-digests`, `setup-buildx`), and every step has a `name:` phrased the same way (`Get image slug` → `id: get-image-slug`). Rename IDs and their `steps.<id>` references together:
+Step IDs follow `verb-noun` naming (`checkout-code`, `get-digests`, `setup-buildx`), and every step has a `name:` phrased the same way (`Get image slug` → `id: get-image-slug`). Rename IDs and their `steps.<id>` references together:
 
 ```yaml
 # good
@@ -302,7 +292,7 @@ Step IDs follow `verb-noun` naming like existing steps in the repo (`checkout-co
 
 ## Artifact Names in Reusable Workflows
 
-Artifacts are scoped to the workflow RUN, not to a reusable-workflow call. If a reusable workflow writes artifacts that it (or its consumer jobs) reads back within the same run, and the caller may invoke it more than once per run, the artifact names MUST be namespaced per call — e.g. derive a prefix from a required input (`image-name`) in a `prepare` job and use it as the shared grouping key on both the write and read sides (e.g. `matrix-step-name` for GoCodeAlone/cloudposse matrix-outputs actions). A hardcoded name like `build` collides across calls (last-writer-wins on same matrix keys).
+Artifacts are scoped to the workflow RUN, not to a reusable-workflow call. If a reusable workflow writes artifacts that it (or its consumer jobs) reads back within the same run, and the caller may invoke it more than once per run, the artifact names MUST be namespaced per call — e.g. derive a prefix from a required input (`image-name`) and use it on both the write and read sides. A hardcoded name like `build` collides across calls (last-writer-wins on same matrix keys).
 
 ## Common Mistakes
 
