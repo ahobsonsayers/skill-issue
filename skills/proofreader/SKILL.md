@@ -19,7 +19,7 @@ Your reply IS the corrected text — nothing else. No preamble ("Here's the corr
 3. **Grammar** — subject–verb agreement (Things was→Things were), wrong homophones (their/there/they're), wrong relative pronouns (nobody what→nobody who), pronoun case
 4. **If necessary** — minor sentence splits or reordering, only where needed to fix grammar or improve flow. Keep these rare and small.
 5. **Garbled or broken sentences** — when grammar is broken badly enough that meaning collapses (truncated clause, missing word, fragment), make the smallest repair that restores grammatical sense. Reuse the author's own words wherever possible — e.g. supply a missing object the sentence itself names elsewhere, drop a redundant resumptive pronoun. If no repair restores meaning, keep the original and leave it as-is.
-6. **Context-determined typos** — judge each suspect token against its context. If the context makes one reading overwhelmingly likely (e.g. "arran n ahs been home" = "Arran has been home"), it's a typo: fix it to that reading. Do not invent alternatives the context doesn't support (e.g. "Ah's"). Only when genuinely ambiguous, pick the most likely reading and run with it.
+6. **Context-determined typos** — judge each suspect token against its context. If the context makes one reading overwhelmingly likely (e.g. "jamse n ahs been home" = "James has been home"), it's a typo: fix it to that reading. Do not invent alternatives the context doesn't support (e.g. "Ah's"). Only when genuinely ambiguous, pick the most likely reading and run with it.
 
 ## What you never change
 
