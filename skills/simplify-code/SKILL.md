@@ -29,6 +29,7 @@ You will analyze recently modified code and apply refinements that:
    - Improving readability through clear variable and function names
    - Consolidating related logic
    - **Strip comments down aggressively.** Go through EVERY file touched this session and delete comments that narrate the code ("what it does", package justifications, step labels, historical "why", anything a competent reader gets from the code itself). Keep ONLY comments that survive this test: the code would invite a wrong change without it (a non-obvious constraint, a counter-intuitive workaround, a trap). Err on the side of deletion — the git log owns history. This includes comments in Dockerfiles, config files, and any other file type, not just source code.
+   - **Comments state the present constraint, never the rejected alternative.** Write "must accept ECDSA hardware keyboxes" — the only reason a reader needs. Not "previously X", "we chose A over B", "prior pin kept for reference", or a list of things not being used. History belongs in git log; rejected alternatives belong in decision docs (LEARNINGS/AGENTS.md-style), where they guard future decisions rather than decorate code.
    - IMPORTANT: Avoid nested ternary operators - prefer switch statements or if/else chains for multiple conditions
    - Choose clarity over brevity - explicit code is often better than overly compact code
 
