@@ -4,7 +4,7 @@ Go code must match these conventions. Apply to all new and edited code; flag vio
 
 Do not apply to third-party or vendored Go code, or when the user explicitly requests a different style.
 
-Contents: names, inline assignment, error handling (`%w`, error-first), whitespace, long calls, nested calls, comments, libraries, values vs pointers, minimalism, common mistakes.
+Contents: names, constructors, inline assignment, error handling (`%w`, error-first, sentinels), whitespace, long calls, nested calls, enums, interfaces, comments, libraries, values vs pointers, minimalism, common mistakes.
 
 ## Descriptive Variable Names
 
@@ -29,6 +29,14 @@ i := Job{Queue: "default"}
 // good
 job := Job{Queue: "default"}
 ```
+
+MixedCaps only — never underscores or ALL_CAPS: `maxRetries`, not `max_retries` or `MAX_RETRIES`. Acronyms are all caps or all lower: `URL`, `httpClient` — never `Url`, `Http`.
+
+## No Stuttering, No Get Prefix
+
+The package name is always present at the call site, so identifiers must not repeat it: `queue.New()`, not `queue.NewQueue()`; `http.Client`, not `http.HTTPClient`. The constructor is `New()` when the package has one primary type; `NewTypeName` only when it has several (`http.NewRequest`, `http.NewServeMux`).
+
+Getters drop the `Get` prefix: `StatusName()`, not `GetStatusName()`. Keep `Is`/`Has`/`Can` on boolean predicates: `IsHealthy() bool`, not `Healthy() bool`.
 
 ## No Inline Assignment
 
@@ -89,6 +97,8 @@ return fmt.Errorf("compute timeout failed: %v", err)
 return fmt.Errorf("compute timeout: %w", err)
 ```
 
+Error strings are fully lowercase, no punctuation: `"invalid job id"`, not `"Invalid job ID."` Sentinel errors use the `Err` prefix and carry the package name so the origin is visible wherever the message surfaces: `ErrNotFound = errors.New("jobstore: not found")`.
+
 ## Whitespace Separates Sections
 
 Use a blank line to separate the distinct logical steps of a function. A function that builds a client, fetches data, and renders should read as clearly separated blocks:
@@ -118,7 +128,7 @@ Reserve blank lines for top-level steps (build client / fetch / JSON-check / ren
 
 ## Split Long Calls Across Lines
 
-Split multi-argument function calls over multiple lines, one argument per line, when the call doesn't fit comfortably on a single line or reads more clearly broken up. `gofmt` does not do this for you; split by hand, each argument on its own line with a trailing comma:
+Split a call over multiple lines, one argument per line, only when it has 4+ arguments or does not fit on a single line. Two- and three-argument calls stay inline — one-per-line splitting of short calls is noise, not clarity. `gofmt` does not do this for you; split by hand, each argument on its own line with a trailing comma:
 
 ```go
 // good
@@ -185,6 +195,29 @@ jobs, err := client.List(ctx, queue)
 
 Exception: `fmt.Errorf("...: %w", err)` and a single call that is itself the operation, e.g. `return json.Marshal(data)` or `len(s)`, are fine — the rule targets chaining where an intermediate result is worth naming.
 
+## Enums: Zero Value Is Unknown
+
+Start iota constants with an explicit `Unknown`/`Invalid` sentinel so the zero value is not a real state:
+
+```go
+type Status int
+
+const (
+	StatusUnknown Status = iota // zero value: unset
+	StatusActive
+	StatusInactive
+)
+```
+
+A `var s Status` silently reads as 0 — if that maps to a real state like `StatusActive`, code behaves as if a status was deliberately chosen when it was never set.
+
+## Interfaces
+
+- Do not define an interface next to a type with only one implementation. Start with the concrete struct; extract the interface when a second consumer, implementation, or test mock appears.
+- Define interfaces in the package that consumes them, not the package that implements them. The consumer owns the contract and needs only the methods it calls.
+- Accept interfaces in constructors; return concrete structs — an interface return hides every other method of the concrete type from callers.
+- When implementing one, add the compile-time check near the type: `var _ JobStore = (*JobStore)(nil)`.
+
 ## Keep Comments Minimal
 
 Do not remove existing comments. When editing nearby code, leave comments that are already there (unless running [simplify-code](../../simplify-code/SKILL.md), which strips narrating comments). For comments you write, keep them to one line max and only when the code genuinely needs clarification. Prefer rewriting the code to be self-explanatory over adding a comment.
@@ -197,6 +230,7 @@ Prefer a well-established library over writing your own helper whenever one alre
 
 - Use stdlib when it covers the need (e.g. `strings.Split` over a hand-rolled splitter, `uuid.NewString()` over a hand-decoded UUID).
 - Use `github.com/samber/lo` for common slice/map helpers (e.g. `lo.Filter`, `lo.UniqBy`, `lo.FlatMap`, `lo.FilterMap`) instead of a hand-rolled loop.
+- Compile regexps once at package level: `var nameRegex = regexp.MustCompile(...)`, never inside a function. One package-level regexp beats a hand-rolled character loop for format validation.
 - Do not reimplement what a dependency already provides.
 
 ## Values Over Pointers
@@ -235,4 +269,14 @@ Within a package, split files by domain rather than size: more, smaller files th
 - Returning pointers for data structures and configs when a value would do.
 - Running logical steps together with no blank-line separation — use a blank line between distinct blocks.
 - Squeezing a multi-argument call onto one long line — split it one argument per line when it doesn't read clearly inline.
+- Splitting two- or three-argument calls one argument per line — split only 4+ argument or over-long calls.
+- `queue.NewQueue()` or `http.HTTPClient()` — the package name is already at the call site.
+- `GetStatusName()` — drop the `Get`; keep `Is`/`Has`/`Can` on boolean predicates.
+- A real enum value at iota 0 — start with `StatusUnknown` so the zero value means unset.
+- Defining an interface beside its single implementation — start concrete, extract when a second consumer appears.
+- Defining an interface in the implementor package — the consumer package owns the contract.
+- Returning an interface from a constructor — return the concrete struct.
+- Sentinel errors without the package prefix, or capitalized error strings — `errors.New("jobstore: not found")`, all lowercase.
+- Hand-rolling a character-loop validator or compiling a regexp inside a function — one package-level `regexp.MustCompile`.
+- `Url`, `Http` mixed-case acronyms — all caps or all lower.
 - Adding explanatory comments instead of making the code self-explanatory.
