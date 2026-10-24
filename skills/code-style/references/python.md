@@ -71,9 +71,14 @@ Do NOT convert a simple internal record. A small `NamedTuple` or `dataclass` tha
 
 For a new plain `dict` or positional tuple that carries named fields, use a `NamedTuple` or `dataclass`, or pydantic if it meets the bar above.
 
+## No file or module preamble
+
+No preamble comments or module docstrings: code should document itself. Design and usage context belongs in a README or a docstring on the specific class/function, not in a blurb at the top of the file.
+
 ## Common Mistakes
 
 - Packing the items on one indented line between the brackets instead of adding the trailing comma.
 - Hand-formatting to look like the formatter output instead of running the formatter.
 - Leaving `-> None` off a function because "it returns nothing".
 - Converting a working `NamedTuple` or `dataclass` to pydantic with no validation, parsing or boundary need.
+- Writing a module-docstring preamble that narrates the file instead of documenting the symbols.

@@ -189,6 +189,8 @@ Exception: `fmt.Errorf("...: %w", err)` and a single call that is itself the ope
 
 Do not remove existing comments. When editing nearby code, leave comments that are already there (unless running [simplify-code](../../simplify-code/SKILL.md), which strips narrating comments). For comments you write, keep them to one line max and only when the code genuinely needs clarification. Prefer rewriting the code to be self-explanatory over adding a comment.
 
+No package or file preamble comments: code should document itself. Design and usage context belongs in a README or the docs of the specific exported symbol, not in a blurb above `package` or the imports.
+
 ## Prefer Libraries Over Hand-Rolled Code
 
 Prefer a well-established library over writing your own helper whenever one already covers the need. Priority: standard library first, then a trusted third-party library. Only hand-roll when neither provides it.
@@ -218,6 +220,8 @@ Use a pointer only when you genuinely need to mutate or share the same instance.
 ## Keep It Minimal
 
 No speculative features, no abstractions that weren't requested, no boilerplate. Write the minimum code that solves the problem. Match existing project patterns.
+
+Within a package, split files by domain rather than size: more, smaller files that each own one domain (e.g. auth, transport, types) over one large file growing without limit.
 
 ## Common Mistakes
 
