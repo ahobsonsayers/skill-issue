@@ -1,6 +1,6 @@
 ---
 name: code-style
-description: Use when writing, editing, or reviewing code in any language, or checking style, naming, formatting, error handling, nesting, or structure. Per-language references exist for Python, Go, and GitHub Actions workflows.
+description: Use when writing, editing, or reviewing code in any language, or checking style, naming, formatting, comments, error handling, nesting, or structure. Per-language references exist for Python, Go, and GitHub Actions workflows.
 ---
 
 # Code Style
@@ -55,3 +55,13 @@ if err != nil {
 ```
 
 When a per-language reference exists, it carries the detailed wording for that language on top of this rule.
+
+## Comments
+
+Applies to every language, before any per-language reference. A comment earns its place only by saying something the code does not: the why, a constraint, or non-obvious behavior.
+
+- Remove slop: banner separators (`// ==== SECTION ====`), restating the line below it, `// Step 1:` narration, empty labels (`// Main logic`, `// Note: this is important`), decorative emoji, end markers.
+- Write today's fact, not history: no version narratives, no "previously X", no issue numbers. A comment must be true when read cold; git log owns history.
+- One line, two only when the second carries a new fact. Natural developer voice, sentence case, never ALL CAPS.
+- Keep real information: workarounds, security notes, protocol rules, edge cases, licensing.
+- When editing code, remove slop comments in what you touch; never delete comments that carry real information.

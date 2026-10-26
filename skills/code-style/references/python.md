@@ -73,7 +73,7 @@ For a new plain `dict` or positional tuple that carries named fields, use a `Nam
 
 ## No file or module preamble
 
-No preamble comments or module docstrings: code should document itself. Design and usage context belongs in a README or a docstring on the specific class/function, not in a blurb at the top of the file.
+All comments follow the Comments section of the skill: remove slop, today's fact not history, one line unless the second carries a new fact. On top of that: no preamble comments or module docstrings, code should document itself. Design and usage context belongs in a README or a docstring on the specific class/function, not in a blurb at the top of the file.
 
 ## Common Mistakes
 

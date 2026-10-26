@@ -220,7 +220,7 @@ A `var s Status` silently reads as 0 — if that maps to a real state like `Stat
 
 ## Keep Comments Minimal
 
-Do not remove existing comments. When editing nearby code, leave comments that are already there (unless running [simplify-code](../../simplify-code/SKILL.md), which strips narrating comments). For comments you write, keep them to one line max and only when the code genuinely needs clarification. Prefer rewriting the code to be self-explanatory over adding a comment.
+All comments follow the Comments section of the skill: remove slop, today's fact not history, one line unless the second carries a new fact. When editing nearby code, leave comments that are already there (unless running [simplify-code](../../simplify-code/SKILL.md), which strips narrating comments). For comments you write, prefer rewriting the code to be self-explanatory over adding a comment.
 
 No package or file preamble comments: code should document itself. Design and usage context belongs in a README or the docs of the specific exported symbol, not in a blurb above `package` or the imports.
 
