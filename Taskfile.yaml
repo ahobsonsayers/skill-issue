@@ -1,0 +1,29 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install skills
+    deps: [remove]
+    cmds:
+      - git pull
+      - mkdir -p ~/.agents/skills
+      - for skill in "$(pwd)/skills/"*/; do ln -sf "$skill" ~/.agents/skills/; done
+
+  install:relative:
+    desc: Install skills with relative symlinks
+    deps: [remove]
+    cmds:
+      - git pull
+      - mkdir -p ~/.agents/skills
+      - for skill in "$(pwd)/skills/"*/; do ln -sfr "$skill" ~/.agents/skills/; done
+
+  remove:
+    desc: Remove skills
+    cmds:
+      - mkdir -p ./skills
+      - for skill in ./skills/*/; do rm -f ~/.agents/skills/"$(basename "$skill")"; done
+
+  clean:
+    desc: Remove broken symlinks in ~/.agents/skills
+    cmds:
+      - for link in ~/.agents/skills/*; do [ -e "$link" ] || rm -f "$link"; done
