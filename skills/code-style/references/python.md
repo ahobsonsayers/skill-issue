@@ -33,6 +33,21 @@ def submit_job(
 
 The same applies to every bracketed list of items: call arguments, `def` parameters, list/dict/set/tuple literals, imports, and parenthesised `with` items.
 
+## Constructors are not calls
+
+"Assign, then use" is for calls that do logic. A constructor builds an object from values you already have, so build it inline as an argument. This includes validation and alternate constructors such as `Job.from_response(resp)`. Do not split it into a variable, and do not add a helper whose only job is to build it.
+
+```python
+# Good
+job = submit_job(
+    client,
+    SubmitJobInput(
+        queue=queue,
+        payload=payload,
+    ),
+)
+```
+
 ## Type everything
 
 - Every parameter and every return has an annotation. A function that returns nothing is `-> None`, never unannotated.
