@@ -307,3 +307,4 @@ Artifacts are scoped to the workflow RUN, not to a reusable-workflow call. If a 
 - `for` loops or `arr=(...)` arrays in `run:` — use `while read -r` over newline-delimited input.
 - `${VAR}` when `$VAR` suffices — drop braces unless needed for disambiguation.
 - Single-line `echo "key=value" >> $GITHUB_OUTPUT` for multi-line values — use heredoc.
+- Saving a workflow file without a trailing newline, or with extra blank lines at the end — keep exactly one.

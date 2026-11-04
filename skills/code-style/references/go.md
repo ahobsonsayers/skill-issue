@@ -280,3 +280,4 @@ Within a package, split files by domain rather than size: more, smaller files th
 - Hand-rolling a character-loop validator or compiling a regexp inside a function — one package-level `regexp.MustCompile`.
 - `Url`, `Http` mixed-case acronyms — all caps or all lower.
 - Adding explanatory comments instead of making the code self-explanatory.
+- Saving a file without a trailing newline, or with extra blank lines at the end — `gofmt` writes exactly one.

@@ -82,3 +82,4 @@ All comments follow the Comments section of the skill: remove slop, today's fact
 - Leaving `-> None` off a function because "it returns nothing".
 - Converting a working `NamedTuple` or `dataclass` to pydantic with no validation, parsing or boundary need.
 - Writing a module-docstring preamble that narrates the file instead of documenting the symbols.
+- Saving a file without a trailing newline, or with extra blank lines at the end — `ruff format` writes exactly one.

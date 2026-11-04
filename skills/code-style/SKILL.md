@@ -30,6 +30,8 @@ job = submit_job(queue, timeout)
 job = submit_job(queue, estimate_timeout(payload))
 ```
 
+- **Every file you write or edit ends with exactly one newline.** No missing final newline, no extra blank line at the end. The formatters (`ruff format`, `gofmt`) add it: run the formatter and keep its output.
+
 ## Never Nest — Return Early
 
 The core rule, any language. Don't bury logic inside nested guards. Check the fast path or error first, return immediately, and keep the happy path flat at the outermost indentation. When a guard would wrap another guard, flatten it into sequential checks with early returns.
