@@ -75,6 +75,10 @@ For a new plain `dict` or positional tuple that carries named fields, use a `Nam
 
 All comments follow the Comments section of the skill: remove slop, today's fact not history, one line unless the second carries a new fact. On top of that: no preamble comments or module docstrings, code should document itself. Design and usage context belongs in a README or a docstring on the specific class/function, not in a blurb at the top of the file.
 
+## End Every File With a Newline
+
+Every file you write or edit ends with exactly one newline. No missing final newline, no extra blank line at the end. `ruff format` writes exactly one: run the formatter and keep its output.
+
 ## Common Mistakes
 
 - Packing the items on one indented line between the brackets instead of adding the trailing comma.
@@ -82,4 +86,3 @@ All comments follow the Comments section of the skill: remove slop, today's fact
 - Leaving `-> None` off a function because "it returns nothing".
 - Converting a working `NamedTuple` or `dataclass` to pydantic with no validation, parsing or boundary need.
 - Writing a module-docstring preamble that narrates the file instead of documenting the symbols.
-- Saving a file without a trailing newline, or with extra blank lines at the end — `ruff format` writes exactly one.

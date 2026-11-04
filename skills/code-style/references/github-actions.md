@@ -294,6 +294,10 @@ Step IDs follow `verb-noun` naming (`checkout-code`, `get-digests`, `setup-build
 
 Artifacts are scoped to the workflow RUN, not to a reusable-workflow call. If a reusable workflow writes artifacts that it (or its consumer jobs) reads back within the same run, and the caller may invoke it more than once per run, the artifact names MUST be namespaced per call — e.g. derive a prefix from a required input (`service-name`) and use it on both the write and read sides. A hardcoded name like `build` collides across calls (last-writer-wins on same matrix keys).
 
+## End Every File With a Newline
+
+Every file you write or edit ends with exactly one newline. No missing final newline, no extra blank line at the end. No formatter covers workflow YAML: check it yourself before saving.
+
 ## Common Mistakes
 
 - Repeating `permissions:` on every job — declare once at workflow top level; per-job only for genuinely different scopes.
@@ -307,4 +311,3 @@ Artifacts are scoped to the workflow RUN, not to a reusable-workflow call. If a 
 - `for` loops or `arr=(...)` arrays in `run:` — use `while read -r` over newline-delimited input.
 - `${VAR}` when `$VAR` suffices — drop braces unless needed for disambiguation.
 - Single-line `echo "key=value" >> $GITHUB_OUTPUT` for multi-line values — use heredoc.
-- Saving a workflow file without a trailing newline, or with extra blank lines at the end — keep exactly one.

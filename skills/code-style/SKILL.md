@@ -30,7 +30,9 @@ job = submit_job(queue, timeout)
 job = submit_job(queue, estimate_timeout(payload))
 ```
 
-- **Every file you write or edit ends with exactly one newline.** No missing final newline, no extra blank line at the end. The formatters (`ruff format`, `gofmt`) add it: run the formatter and keep its output.
+## End Every File With a Newline
+
+Every file you write or edit ends with exactly one newline. No missing final newline, no extra blank line at the end. The formatters add it — run the formatter (`ruff format`, `gofmt`) and keep its output.
 
 ## Never Nest — Return Early
 

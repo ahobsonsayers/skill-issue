@@ -257,6 +257,10 @@ No speculative features, no abstractions that weren't requested, no boilerplate.
 
 Within a package, split files by domain rather than size: more, smaller files that each own one domain (e.g. auth, transport, types) over one large file growing without limit.
 
+## End Every File With a Newline
+
+Every file you write or edit ends with exactly one newline. No missing final newline, no extra blank line at the end. `gofmt` writes exactly one: run the formatter and keep its output.
+
 ## Common Mistakes
 
 - Shortening variable names to save typing — names must describe meaning.
@@ -280,4 +284,3 @@ Within a package, split files by domain rather than size: more, smaller files th
 - Hand-rolling a character-loop validator or compiling a regexp inside a function — one package-level `regexp.MustCompile`.
 - `Url`, `Http` mixed-case acronyms — all caps or all lower.
 - Adding explanatory comments instead of making the code self-explanatory.
-- Saving a file without a trailing newline, or with extra blank lines at the end — `gofmt` writes exactly one.
