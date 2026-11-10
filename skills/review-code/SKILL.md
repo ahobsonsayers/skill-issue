@@ -82,13 +82,16 @@ Only the owner can raise the budget, ask for another round, or stop the run. You
 First match wins. Do not ask when one matches.
 
 1. The user names files, commits, a branch or a PR: review that. Diff: see "Named scopes" below.
-2. Uncommitted changes exist (`git status --porcelain`, untracked files included): review only those, even on a feature branch. Diff: `git diff HEAD`.
-3. On a branch other than the default branch: review the whole branch. Diff: `git diff $(git merge-base HEAD <default>)`.
-4. On the default branch with nothing uncommitted: ask the user for a branch or PR, then stop.
+2. This session changed files and they are still uncommitted: review those files, even on a feature branch. Diff: `git diff HEAD -- <paths>`.
+3. Uncommitted changes exist, but this session did not make them: review every uncommitted change, and say so in your first message. A session with no history of its own cannot tell whose change is whose, so it takes the whole tree. Diff: `git diff HEAD`.
+4. On a branch other than the default branch: review the whole branch. Diff: `git diff $(git merge-base HEAD <default>)`.
+5. On the default branch with nothing uncommitted: ask the user for a branch or PR, then stop.
 
 The default branch is `origin/HEAD` (for example `origin/main`). If it is not set, use `main` or `master`. If neither exists, ask.
 
-The Scope slot of the reviewer prompt is a list of paths, never a phrase like "the uncommitted tree" or "the files I changed". Take the paths from `git status --porcelain` and `git diff --stat`, then write them out as a comma-separated list of paths.
+**Whose change is it.** Another session may be working in the same checkout. `git status` shows its files as uncommitted too, and they are not yours to review: the reviewer would spend the round on someone else's work, and the handoff would claim it. This session knows the files it wrote and edited; that is the scope. Include a file another session changed only when the change you are reviewing breaks because of it, and say which file and why.
+
+The Scope slot of the reviewer prompt is a list of paths, never a phrase like "the uncommitted tree" or "the files I changed". Write the paths out as a comma-separated list. For rule 3, take them from `git status --porcelain` and `git diff --stat`.
 
 ### Named scopes
 
@@ -336,7 +339,8 @@ Where it goes:
 
 What goes in it:
 
-- **Scope**: the paths reviewed, and the diff or commit range the review ran against.
+- **Scope**: the paths this session changed and reviewed, and the diff or commit range the review ran against. Not everything uncommitted in the tree.
+- **Left out**: the uncommitted files this session did not change, so the next session knows they exist and are not part of this review. Leave the line out when there are none.
 - **Terminal state** and the counters.
 - **Fixed**: each finding that was fixed, with its file.
 - **Open**: each finding left open, with the reason: accepted trade-off, budget exhausted, or needs a decision.
@@ -352,6 +356,8 @@ Keep it short. It is a handoff, not the report: reference the plan, the spec and
 - Reviewing inline because the diff is small, you already read it, or other instructions prefer fewer subagents. Dispatch the reviewer anyway.
 - Judging the change yourself while the reviewer works: reading the whole diff, reading files you are not about to edit, probing the behaviour, or fixing something the reviewer did not report.
 - Reviewing the whole branch when there are uncommitted changes.
+- Reviewing another session's uncommitted work because `git status` listed it. The scope is what this session changed.
+- Claiming the whole tree in the handoff when this session changed two files of it.
 - Re-reviewing the whole tree after a fix round. The scope is the files your receipt named.
 - Accepting a finding that asserts absence without running the check.
 - Treating nits as blockers, so every round produces more work.
