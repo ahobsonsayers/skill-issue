@@ -59,6 +59,8 @@ The dispatch order is fixed. There are six steps and no others:
 
 A review that found nothing to fix skips straight to step 6. Review 3 confirms the fixes; it never starts another fix round. Step 6 is the final message; there is no step 7. A dispatch that is not the next number in this list is a budget violation: write the final message instead.
 
+Size check: when the scope is one file or under about 100 changed lines, offer one reviewer pass and no fix-round budget, and say so in the first message. Use the full budget only when the owner asks for it or the scope is larger.
+
 Three things hold it:
 
 1. **Say it up front.** Your first message is the block in the intro: the budget sentence, the scope, the change summary, and `review budget: reviews 0/3, fix rounds 0/2 | next: review 1`.
@@ -81,7 +83,7 @@ Only the owner can raise the budget, ask for another round, or stop the run. You
 
 First match wins. Do not ask when one matches.
 
-1. The user names files, commits, a branch or a PR: review that. Diff: see "Named scopes" below.
+1. The user names files, commits, a branch or a PR: review that. Diff: see "Named scopes" below. If the request names a feature, function or mutation instead of files ("review the mutation"), the scope is the files that implement it: say which. If you cannot tell which files, ask one question before you dispatch. A request narrower than this session's changes is never widened to all of them.
 2. This session changed files and they are still uncommitted: review those files, even on a feature branch. Diff: `git diff HEAD -- <paths>`.
 3. Uncommitted changes exist, but this session did not make them: review every uncommitted change, and say so in your first message. A session with no history of its own cannot tell whose change is whose, so it takes the whole tree. Diff: `git diff HEAD`.
 4. On a branch other than the default branch: review the whole branch. Diff: `git diff $(git merge-base HEAD <default>)`.
@@ -100,6 +102,21 @@ The Scope slot of the reviewer prompt is a list of paths, never a phrase like "t
 - A branch or PR: you edit the working tree, so the branch must be checked out. If it is not, ask before you run `git switch <branch>` or `gh pr checkout <pr>`. With uncommitted changes, do not check out: ask the user to commit or stash them, then stop. Diff: rule 3. The base is the default branch, or `origin/<baseRefName>` for a PR.
 
 For a PR, first run `gh pr view <pr> --json number,title,body,headRefName,baseRefName` and `git fetch origin <baseRefName>`.
+
+### PR context
+
+Whenever the scope is a branch (rule 4, or a named branch or PR), look for its PR before you write the change summary. Skip this when `gh` is missing or the scope is not a branch.
+
+1. Find it: `gh pr list --head <branch> --state all --json number,title,state,url --limit 1`. No result means no PR: carry on, and say "no PR found" in the first message.
+2. Read it, using the number from step 1:
+   - `gh pr view <n> --json title,body,reviews,comments,url`
+   - `gh api repos/{owner}/{repo}/pulls/<n>/comments --jq '.[] | {path, line, user: .user.login, body}'` for inline review comments.
+3. Keep what carries intent: the description, requirements and acceptance criteria, decisions the author or reviewers settled, and review comments that are still open. Drop bot noise, CI status and "LGTM".
+4. Use it in three places:
+   - Step 2: the PR is the best source for the change summary after this session.
+   - Step 3: settled decisions go into the `Settled decisions` slot, and open review comments go into `What the change should do` as things to check. Write each as one line with its source (`PR #<n>`).
+   - Step 7: the PR link, the decisions and the open comments go into the handoff `Context` and `Open` lines.
+5. Name the PR (number and URL) in the first message.
 
 ### Fix rounds
 
@@ -126,7 +143,7 @@ This summary is the reviewer's binding intent: a finding must break it. It state
 Sources, best first:
 
 1. This session, if the changes were made here.
-2. The PR title and body. `gh pr view --json title,body` with no number finds the PR for the current branch.
+2. The PR found in "PR context": title, body and comments.
 3. The messages of the commits in scope: `git log --format='%s%n%b' <base>..HEAD`. Uncommitted changes have none.
 
 If none exist, write "Unknown. Infer it from the diff."
@@ -138,13 +155,13 @@ Dispatch one fresh subagent with this prompt. Fill in the `<slots>` and copy the
 Preflight: run the diff command with `--stat`. If it is empty, the scope holds no changes: do not dispatch. Say so and stop.
 
 ~~~text
-Review a code change. Report only: do not edit files, commit, stash or switch branches.
+Review a code change. Report only: do not edit files, commit, stash or switch branches. Never modify a file, not even temporarily (no inverting a condition to test it). Read, grep and run the existing tests only.
 
 Repo: <absolute path>
 Scope: <the paths in scope, comma separated, for example "lib/a.py, test/a_test.py". In a fix round this is exactly the files your last receipt named, and nothing else.>
 Diff: run `<diff command>`, and read the untracked files from `git ls-files --others --exclude-standard`
 What the change should do: <change summary>
-Settled decisions: <the plan ledger, AGENTS.md, the plan or spec of the repo, and the linter config. Write "nothing" if the repo has none.>
+Settled decisions: <the plan ledger, AGENTS.md, the plan or spec of the repo, the linter config, and decisions from the PR (see "PR context"). Write "nothing" if there are none.>
 Earlier findings: <"none", or one line each: <title> (<path>): fixed | not chosen | skipped, <reason>>
 
 Review only the files and hunks named in Scope. Everything else in the tree was
@@ -228,7 +245,11 @@ Number the findings across all groups. Leave out empty groups. With no findings,
 
 ## 4. Show the report and ask what to fix
 
-Show the report as the reviewer wrote it.
+Print the findings in your own message text, before you ask anything. The owner does not see the subagent's output, and a question with no findings above it is unanswerable. This applies to every review, including review 2 and 3, and including "Verdict: Ship." (print the verdict and the one-line check).
+
+- Print the full report as the reviewer wrote it, or a faithful condensed version: verdict, scope, and every finding with number, severity, title, `path:lines`, problem and fix. Never drop or soften a finding, and never replace the findings with "the reviewer found 3 issues".
+- Print the nits too, as a short list.
+- Only after the printed findings, ask which to fix. The question tool does not replace the printed report: it goes in the same turn, after it.
 
 Ask the user which findings to fix, with these options:
 
@@ -345,7 +366,7 @@ What goes in it:
 - **Fixed**: each finding that was fixed, with its file.
 - **Open**: each finding left open, with the reason: accepted trade-off, budget exhausted, or needs a decision.
 - **Decisions**: what the owner decided during this review, one line each. They are settled. A later review must not re-raise them.
-- **Context**: why the change exists, what was tried and rejected, and what the owner wants. The next session reads this first: it is the part the code cannot say.
+- **Context**: why the change exists, what was tried and rejected, and what the owner wants. When a PR exists: its URL, the decisions from its description and comments, and the review comments still open. The next session reads this first: it is the part the code cannot say.
 - **Nits**: not fixed, not blockers.
 - **Next step**: what the next agent should do first.
 
@@ -368,6 +389,7 @@ Keep it short. It is a handoff, not the report: reference the plan, the spec and
 - Reporting a branch the code marks as deliberate, or fixing one after the owner picked it. Quote the marker, drop the finding, say so in the final message.
 - Skipping a slop comment because it is only a nit. Report it in the nits; do not fix it in a review round.
 - Dispatching the first reviewer before the message that states the budget. The scope, the summary and the counters go out first.
+- Asking what to fix without printing the findings first. The subagent's report is invisible to the owner until you write it in your own message.
 - Fixing before the user picks, or starting another review without asking.
 - Applying a fix that goes past the finding. The fix is the finding, not your own better version of it.
 - Committing the fixes.
