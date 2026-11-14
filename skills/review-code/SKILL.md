@@ -243,7 +243,7 @@ Not checked: <one line, only if something that matters could not be checked>
 Number the findings across all groups. Leave out empty groups. With no findings, write "Verdict: Ship.", the scope, and one line on what you checked.
 ~~~
 
-## 4. Show the report and ask what to fix
+## 4. Check the findings, then ask what to fix
 
 Print the findings in your own message text, before you ask anything. The owner does not see the subagent's output, and a question with no findings above it is unanswerable. This applies to every review, including review 2 and 3, and including "Verdict: Ship." (print the verdict and the one-line check).
 
@@ -251,13 +251,48 @@ Print the findings in your own message text, before you ask anything. The owner 
 - Print the nits too, as a short list.
 - Only after the printed findings, ask which to fix. The question tool does not replace the printed report: it goes in the same turn, after it.
 
-Ask the user which findings to fix, with these options:
+**Gate 1 — the spot-check, before the owner sees the list.** A finding that asserts something is absent, unused, dead or unreachable is the kind that turns out to be wrong. Run the check for each must-fix and should-fix finding, for that one claim and nothing else:
 
-- Must fix and should fix (recommended)
+| Claim | Check |
+|---|---|
+| "X is never called / not stored / missing" | `grep -rn "<symbol>" lib/ test/` (or the equivalent in the repo) and read the hits |
+| "this branch is dead / unreachable" | write a throwaway 3-line test or trace the caller by hand, then delete it |
+| "the docs say Y" | open the file and quote the line |
+| "this breaks the contract" | quote the contract line from the spec or AGENTS.md and name the input that breaks it |
+| "this branch is wrong" but the code marks it deliberate | quote the marker (a `skip`, an "on purpose" comment, a guard with a reason next to it) and drop the finding |
+| "this new logic has no test" | invert one condition the change adds, run the suite, restore the file; a mutation that stays green is the finding |
+
+The check decides, not the owner's pick:
+
+- The check confirms the finding: it survives gate 1, and goes on the list below.
+- The check refutes it: it is dropped. Do not fix it and do not offer it to the owner, even when the owner would have picked it. Report it in the final message with the command and its output.
+
+Read the hits, do not just count them: an empty result is not proof of absence either. A symbol that a grep does not find may live under another name, in another directory, or behind a caller.
+
+A refuted finding is not an open finding: it does not keep the run open.
+
+When no must-fix or should-fix finding survived, fix nothing: go to step 6 and close the run. Do not ask, and do not dispatch another review.
+
+Then ask which of the survivors to fix. The first option is always your own recommendation: the findings you judge worth fixing, named by number, and one line on why the rest are not. Judge by what each finding's Fix line asks for: a one-line fix is worth taking, a refactor bigger than the defect is not.
+
+```
+Which findings should I fix?
+
+- Fix 1 and 3 — 2 needs a refactor bigger than the defect; leave it.   (recommended)
+- Fix every must-fix and should-fix finding
 - Only must fix
 - Done
+```
 
-The user can also type numbers, for example "1 and 3", or name findings the options did not offer. Fix nothing before the user answers.
+What goes in your recommendation, by number:
+
+- every must-fix finding that survived gate 1;
+- a should-fix finding when its Fix line asks for a small change;
+- never a nit, and never a should-fix whose fix is a larger change than the defect: leave it out and name the trade-off.
+
+If you would fix everything, the first option says so and the duplicate option goes. "Done" is never the first option.
+
+Four options at most, and the recommendation is the first. Print the list, one option per line: do not paraphrase it into a sentence. The user can also type numbers, for example "1 and 3", or name findings the options did not offer. Fix nothing before the user answers.
 
 The answer decides what gets fixed:
 
@@ -273,35 +308,9 @@ If the report repeats a finding that an earlier round already fixed, the loop is
 
 ## 5. Apply the fixes
 
-A finding must pass two gates. Only findings that passed both are fixed.
+Only the findings the owner named are fixed. Everything on the list survived gate 1 in step 4, so there is nothing left to reject.
 
-**Gate 1 — the spot-check.** A finding that asserts something is absent, unused, dead or unreachable is the kind that turns out to be wrong, so run the check yourself. Run it for that one claim, and for nothing else:
-
-| Claim | Check |
-|---|---|
-| "X is never called / not stored / missing" | `grep -rn "<symbol>" lib/ test/` (or the equivalent in the repo) and read the hits |
-| "this branch is dead / unreachable" | write a throwaway 3-line test or trace the caller by hand, then delete it |
-| "the docs say Y" | open the file and quote the line |
-| "this breaks the contract" | quote the contract line from the spec or AGENTS.md and name the input that breaks it |
-| "this branch is wrong" but the code marks it deliberate | quote the marker (a `skip`, an "on purpose" comment, a guard with a reason next to it) and drop the finding |
-| "this new logic has no test" | invert one condition the change adds, run the suite, restore the file; a mutation that stays green is the finding |
-
-The check decides, not the owner's pick:
-
-- The check confirms the finding: it passes gate 1.
-- The check refutes it: it fails gate 1. Drop it. Do not fix it, even when the owner picked it. Report it in the final message with the command and its output.
-
-Read the hits, do not just count them: an empty result is not proof of absence either. A symbol that a grep does not find may live under another name, in another directory, or behind a caller.
-
-A refuted finding is not an open finding: it does not keep the run open.
-
-**Gate 2 — the owner's pick.** The owner picks which findings to fix among the ones that passed gate 1.
-
-When no finding passed both gates, fix nothing. Go to step 6 and close the run.
-
-### Apply the fixes
-
-Apply the chosen findings yourself, in this session. You hold the context the finding does not: why the change exists, what was tried, what must stay true. That is the reason you fix it and the reviewer does not.
+Apply them yourself, in this session. You hold the context the finding does not: why the change exists, what was tried, what must stay true. That is the reason you fix it and the reviewer does not.
 
 - One finding at a time, with the smallest change that fixes it. Touch nothing else, and do not offer other changes.
 - Read the file you are about to edit, and only that file. You are applying a finding, not reviewing the change.
@@ -388,7 +397,7 @@ Keep it short. It is a handoff, not the report: reference the plan, the spec and
 - Downgrading dead weight to a nit. A test that earns nothing is dead weight: should-fix, and the fix is to delete it.
 - Reporting a branch the code marks as deliberate, or fixing one after the owner picked it. Quote the marker, drop the finding, say so in the final message.
 - Skipping a slop comment because it is only a nit. Report it in the nits; do not fix it in a review round.
-- Dispatching the first reviewer before the message that states the budget. The scope, the summary and the counters go out first.
+- Dispatching the first reviewer before the message that states the budget. Scope discovery, then the message, then the dispatch: not scope discovery, dispatch, message.
 - Asking what to fix without printing the findings first. The subagent's report is invisible to the owner until you write it in your own message.
 - Fixing before the user picks, or starting another review without asking.
 - Applying a fix that goes past the finding. The fix is the finding, not your own better version of it.
